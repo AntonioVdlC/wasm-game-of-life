@@ -1,6 +1,44 @@
 import { Universe, Cell } from "wasm-game-of-life";
 import { memory } from "wasm-game-of-life/wasm_game_of_life_bg";
 
+const fps = new (class {
+  constructor() {
+    this.fps = document.getElementById("fps");
+    this.frames = [];
+    this.lastFrameTimestamp = performance.now();
+  }
+
+  render() {
+    const now = performance.now();
+    const delta = now - this.lastFrameTimestamp;
+    this.lastFrameTimestamp = now;
+    const fps = (1 / delta) * 1000;
+
+    this.frames.push(fps);
+    if (this.frames.length > 100) {
+      this.frames.shift();
+    }
+
+    let min = Infinity;
+    let max = -Infinity;
+    let sum = 0;
+    for (let i = 0; i < this.frames.length; i++) {
+      min = Math.min(this.frames[i], min);
+      max = Math.max(this.frames[i], max);
+      sum += this.frames[i];
+    }
+    let mean = sum / this.frames.length;
+
+    this.fps.textContent = `
+Frames per second:
+         latest = ${Math.round(fps)}
+avg of last 100 = ${Math.round(mean)}
+min of last 100 = ${Math.round(min)}
+max of last 100 = ${Math.round(max)}
+`.trim();
+  }
+})();
+
 const CELL_SIZE = 5;
 const GRID_COLOR = "#CCCCCC";
 const DEAD_COLOR = "#FFFFFF";
@@ -30,7 +68,7 @@ canvas.addEventListener("click", () => {
 
   drawGrid();
   drawCells();
-})
+});
 
 const ctx = canvas.getContext("2d");
 
@@ -61,11 +99,31 @@ const drawCells = () => {
 
   ctx.beginPath();
 
+  ctx.fillStyle = ALIVE_COLOR;
   for (let row = 0; row <= height; row++) {
     for (let col = 0; col <= width; col++) {
       const idx = getIndex(row, col);
 
-      ctx.fillStyle = cells[idx] === Cell.Alive ? ALIVE_COLOR : DEAD_COLOR;
+      if (cells[idx] !== Cell.Alive) {
+        continue;
+      }
+      ctx.fillRect(
+        col * (CELL_SIZE + 1) + 1,
+        row * (CELL_SIZE + 1) + 1,
+        CELL_SIZE,
+        CELL_SIZE
+      );
+    }
+  }
+
+  ctx.fillStyle = DEAD_COLOR;
+  for (let row = 0; row <= height; row++) {
+    for (let col = 0; col <= width; col++) {
+      const idx = getIndex(row, col);
+
+      if (cells[idx] !== Cell.Dead) {
+        continue;
+      }
       ctx.fillRect(
         col * (CELL_SIZE + 1) + 1,
         row * (CELL_SIZE + 1) + 1,
@@ -103,7 +161,11 @@ const pause = () => {
 };
 
 const renderLoop = () => {
-  universe.tick();
+  fps.render();
+
+  for (let i = 0; i < 9; i++) {
+    universe.tick();
+  }
 
   drawGrid();
   drawCells();
