@@ -104,11 +104,33 @@ const drawCells = () => {
 
   ctx.beginPath();
 
-  for (let row = 0; row <= height; row++) {
-    for (let col = 0; col <= width; col++) {
+  // Alive cells.
+  ctx.fillStyle = ALIVE_COLOR;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
       const idx = getIndex(row, col);
+      if (cells[idx] !== Cell.Alive) {
+        continue;
+      }
 
-      ctx.fillStyle = cells[idx] === Cell.Alive ? ALIVE_COLOR : DEAD_COLOR;
+      ctx.fillRect(
+        col * (CELL_SIZE + 1) + 1,
+        row * (CELL_SIZE + 1) + 1,
+        CELL_SIZE,
+        CELL_SIZE
+      );
+    }
+  }
+
+  // Dead cells.
+  ctx.fillStyle = DEAD_COLOR;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const idx = getIndex(row, col);
+      if (cells[idx] !== Cell.Dead) {
+        continue;
+      }
+
       ctx.fillRect(
         col * (CELL_SIZE + 1) + 1,
         row * (CELL_SIZE + 1) + 1,
